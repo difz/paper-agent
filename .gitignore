@@ -1,7 +1,9 @@
-.venv
+.venv/
 .env
 
 __pycache__/
+store/
+*.pyc
 
 CLAUDE.md
 FREE_SEARCH_ENGINES.md

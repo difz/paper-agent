@@ -10,7 +10,7 @@ from typing import Optional
 import asyncio
 import io
 
-from langchain.agents import initialize_agent, AgentType
+from langchain.agents import create_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from agent.config import Settings
@@ -57,9 +57,8 @@ class ResearchBot(commands.Bot):
         llm = ChatGoogleGenerativeAI(model=self.settings.llm_model, temperature=0)
         tools = create_user_tools(user_id)
 
-        return initialize_agent(
+        return create_agent(
             tools, llm,
-            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
             verbose=False,
             handle_parsing_errors=True,
             max_iterations=5
