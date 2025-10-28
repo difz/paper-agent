@@ -40,16 +40,21 @@ class PDFMetadataExtractor:
             # Extract from PDF metadata
             pdf_info = reader.metadata
             if pdf_info:
+                log.debug(f"PDF metadata found: {pdf_info}")
                 metadata['title'] = pdf_info.get('/Title', None)
                 author_str = pdf_info.get('/Author', None)
                 if author_str:
+                    log.debug(f"Raw author string from PDF metadata: {author_str}")
                     metadata['authors'] = self._parse_authors(author_str)
+                    log.debug(f"Parsed authors: {metadata['authors']}")
 
                 # Try to extract year from creation date
                 creation_date = pdf_info.get('/CreationDate', '')
                 year = self._extract_year(creation_date)
                 if year:
                     metadata['year'] = year
+            else:
+                log.debug("No PDF metadata found")
 
             # Extract from first page text (fallback for missing metadata)
             if len(reader.pages) > 0:
@@ -61,7 +66,12 @@ class PDFMetadataExtractor:
 
                 # Extract authors from first page if not in metadata
                 if not metadata['authors']:
+                    log.debug("Attempting to extract authors from first page text...")
                     metadata['authors'] = self._extract_authors_from_text(first_page_text)
+                    if metadata['authors']:
+                        log.debug(f"Extracted authors from text: {metadata['authors']}")
+                    else:
+                        log.debug("No authors found in first page text")
 
                 # Extract year from first page if not in metadata
                 if not metadata['year']:
@@ -91,8 +101,23 @@ class PDFMetadataExtractor:
             return []
 
         # Split by common delimiters
-        authors = re.split(r'[;,]|\sand\s|\s&\s', author_str)
-        return [a.strip() for a in authors if a.strip()]
+        authors = re.split(r'[;,]|\sand\s|\s&\s|\n', author_str)
+
+        # Clean up each author name
+        cleaned = []
+        for author in authors:
+            author = author.strip()
+            # Remove email addresses
+            author = re.sub(r'\s*\([^)]*@[^)]*\)', '', author)
+            # Remove affiliations in parentheses/brackets
+            author = re.sub(r'\s*[\[\(][^\]\)]*[\]\)]', '', author)
+            # Remove trailing numbers and symbols
+            author = re.sub(r'[\d\*†‡§¹²³⁴⁵⁶⁷⁸⁹⁰,]+$', '', author).strip()
+
+            if author and len(author) > 2:
+                cleaned.append(author)
+
+        return cleaned
 
     def _extract_year(self, date_str: str) -> Optional[int]:
         """Extract year from date string."""
@@ -126,24 +151,109 @@ class PDFMetadataExtractor:
             return []
 
         authors = []
+        lines = text.split('\n')
 
-        # Common patterns for author names in academic papers
-        # Look for lines with format: "FirstName LastName"
-        lines = text.split('\n')[:20]  # Check first 20 lines
+        # Skip first 5 lines (usually title) and scan for author section
+        start_line = 3
 
-        for line in lines:
-            line = line.strip()
-            # Skip empty lines and lines that are too long (likely not author names)
-            if not line or len(line) > 100:
+        # Strategy 1: Look for the author section (names followed by "Department")
+        # This is the most reliable pattern for academic papers
+        for i in range(start_line, min(len(lines), 60)):
+            line = lines[i].strip()
+
+            if not line or len(line) > 200:
                 continue
 
-            # Pattern: Looks like names (2-5 words, capitalized)
-            if re.match(r'^[A-Z][a-z]+(\s+[A-Z]\.?\s*)*[A-Z][a-z]+(\s*,?\s+(and|&)\s+[A-Z][a-z]+(\s+[A-Z]\.?\s*)*[A-Z][a-z]+)*$', line):
-                # Parse multiple authors separated by 'and' or ','
-                author_parts = re.split(r'\s+and\s+|\s*,\s*|\s+&\s+', line)
-                authors.extend([a.strip() for a in author_parts if a.strip()])
+            # Check if next line has department/university keywords
+            if i + 1 < len(lines):
+                next_line = lines[i + 1].strip().lower()
 
-        return authors[:10]  # Limit to first 10 authors
+                # If next line starts with "department", current line is likely an author
+                if (next_line.startswith('department') or 'department of' in next_line or
+                    'university' in next_line or 'college' in next_line):
+
+                    # CamelCase name: "NadimpalliMadanaKailashVarma"
+                    if re.match(r'^([A-Z][a-z]+){2,6}$', line) and 10 < len(line) < 60:
+                        name = re.sub(r'([a-z])([A-Z])', r'\1 \2', line)
+                        # Filter out title words
+                        title_words = ['Machine', 'Learning', 'System', 'Track', 'Enable',
+                                      'Urban', 'Mobility', 'Enhanced', 'Real', 'Time', 'Smart',
+                                      'Transit', 'Bus']
+                        if not any(word in name for word in title_words):
+                            authors.append(name.strip())
+
+                    # Initial + name: "G.RishabBabu"
+                    elif re.match(r'^[A-Z]\.(?:\s*[A-Z][a-z]+){1,3}$', line):
+                        name = re.sub(r'\.([A-Z])', r'. \1', line)
+                        name = re.sub(r'([a-z])([A-Z])', r'\1 \2', name)
+                        authors.append(name.strip())
+
+                    # Title + name: "Mrs.FatimaUnnisa" or "Dr.JohnSmith"
+                    elif re.match(r'^(?:Mrs?\.?|Dr\.?|Prof\.?)[A-Z]', line):
+                        name = re.sub(r'(^(?:Mrs?|Dr|Prof))\.([A-Z])', r'\1. \2', line)
+                        name = re.sub(r'([a-z])([A-Z])', r'\1 \2', name)
+                        authors.append(name.strip())
+
+                    # Normal spaced name: "John Smith"
+                    elif re.match(r'^[A-Z][a-z]+(\s+[A-Z][a-z]+){1,4}$', line):
+                        authors.append(line.strip())
+
+            # Stop after finding 10 authors
+            if len(authors) >= 10:
+                break
+
+        # Strategy 2: If still no authors, look for names followed by "Department" pattern
+        # This is common in IEEE/ACM papers: Name\nDepartment of...\n
+        if len(authors) < 2:  # Need at least 2 authors
+            for i, line in enumerate(lines[:60]):
+                line = line.strip()
+
+                # Check if next line has department/university
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1].strip().lower()
+
+                    # If next line starts with "department", current line might be an author
+                    if next_line.startswith('department') or 'department of' in next_line:
+                        # Current line should be a name (handle both normal and CamelCase)
+                        if re.match(r'^([A-Z][a-z]+){2,6}$', line) and 10 < len(line) < 60:
+                            # CamelCase name
+                            name = re.sub(r'([a-z])([A-Z])', r'\1 \2', line)
+                            # Don't add if it looks like a title
+                            if not any(word in name for word in ['System', 'Track', 'Enable', 'Urban', 'Mobility', 'Enhanced', 'Real']):
+                                authors.append(name.strip())
+                        elif re.match(r'^[A-Z]\.(?:\s*[A-Z][a-z]+){1,3}$', line):
+                            # Initial format: "G.RishabBabu"
+                            name = re.sub(r'\.([A-Z])', r'. \1', line)
+                            name = re.sub(r'([a-z])([A-Z])', r'\1 \2', name)
+                            authors.append(name.strip())
+                        elif re.match(r'^(?:Mrs?\.?|Dr\.?|Prof\.?)\s*[A-Z]', line):
+                            # Title + name: "Mrs.FatimaUnnisa"
+                            name = re.sub(r'\.([A-Z])', r'. \1', line)
+                            name = re.sub(r'([a-z])([A-Z])', r'\1 \2', name)
+                            authors.append(name.strip())
+
+        # Clean up and deduplicate
+        cleaned_authors = []
+        seen = set()
+        for author in authors[:15]:  # Check up to 15 potential authors
+            author = author.strip()
+            # Remove trailing numbers, symbols, and extra text
+            author = re.sub(r'[\d\*†‡§¹²³⁴⁵⁶⁷⁸⁹⁰]+$', '', author).strip()
+            # Remove email addresses
+            author = re.sub(r'\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', '', author).strip()
+
+            # Validate: must be at least 4 chars, start with capital, contain at least one space or dot
+            if (author and len(author) >= 4 and author[0].isupper() and
+                (' ' in author or '.' in author) and author not in seen):
+                # Skip if it's a common false positive
+                false_positives = ['Abstract', 'Introduction', 'Keywords', 'References',
+                                  'Acknowledgment', 'Conclusion', 'Results', 'Methods',
+                                  'Machine Learning', 'Artificial Intelligence', 'Deep Learning']
+                if author not in false_positives:
+                    cleaned_authors.append(author)
+                    seen.add(author)
+
+        return cleaned_authors[:10]  # Limit to first 10 authors
 
     def _extract_year_from_text(self, text: str) -> Optional[int]:
         """Extract publication year from text."""

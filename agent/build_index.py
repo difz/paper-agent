@@ -29,8 +29,12 @@ def build_index(corpus_dir: str = "./corpus"):
         # Load PDF pages
         for d in PyPDFLoader(p).load():     # one Document per page
             # Add bibliographic metadata to each page's metadata
+            # Convert authors list to string (ChromaDB doesn't support list metadata)
+            authors_list = pdf_metadata.get('authors', [])
+            authors_str = "; ".join(authors_list) if authors_list else None
+
             d.metadata['bib_title'] = pdf_metadata.get('title')
-            d.metadata['bib_authors'] = pdf_metadata.get('authors', [])
+            d.metadata['bib_authors'] = authors_str  # Store as string
             d.metadata['bib_year'] = pdf_metadata.get('year')
             d.metadata['bib_journal'] = pdf_metadata.get('journal')
             d.metadata['bib_doi'] = pdf_metadata.get('doi')

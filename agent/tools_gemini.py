@@ -24,8 +24,12 @@ def retrieve_passages(q: str) -> str:
         if len(txt) > 450: txt = txt[:450] + "…"
 
         # Format citation using bibliographic metadata (IEEE style by default)
+        # Parse authors string back to list
+        authors_str = d.metadata.get('bib_authors', '')
+        authors_list = authors_str.split('; ') if authors_str else []
+
         bib_metadata = {
-            'authors': d.metadata.get('bib_authors', []),
+            'authors': authors_list,
             'title': d.metadata.get('bib_title'),
             'year': d.metadata.get('bib_year'),
             'journal': d.metadata.get('bib_journal'),
@@ -49,14 +53,16 @@ def summarize_with_citations(q: str) -> str:
         page = d.metadata.get("page", "?")
 
         # Get bibliographic metadata
-        authors = d.metadata.get('bib_authors', [])
+        # Parse authors string back to list
+        authors_str = d.metadata.get('bib_authors', '')
+        authors = authors_str.split('; ') if authors_str else []
         title = d.metadata.get('bib_title', 'Unknown Title')
         year = d.metadata.get('bib_year', 'n.d.')
         journal = d.metadata.get('bib_journal')
 
         # Build citation reference for this chunk
-        authors_str = ', '.join(authors) if authors else 'Unknown Author'
-        citation_ref = f"[Citation: {authors_str} ({year}). {title}"
+        authors_display = ', '.join(authors) if authors else 'Unknown Author'
+        citation_ref = f"[Citation: {authors_display} ({year}). {title}"
         if journal:
             citation_ref += f". {journal}"
         citation_ref += f". Page {page}]"
