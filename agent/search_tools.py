@@ -13,30 +13,38 @@ log = logging.getLogger("search_tools")
 
 
 class SemanticScholarSearch:
-    """Search Semantic Scholar for academic papers."""
+    """Search Semantic Scholar for academic papers using the public API (no key required)."""
 
     BASE_URL = "https://api.semanticscholar.org/graph/v1"
 
-    # def __init__(self, api_key: Optional[str] = None):
-    #     self.api_key = api_key or os.getenv("SEMANTIC_SCHOLAR_API_KEY")
-    #     self.headers = {}
-    #     if self.api_key:
-    #         self.headers["x-api-key"] = self.api_key
+    def __init__(self):
+        """Initialize without requiring API key - uses public endpoint."""
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; ResearchBot/1.0)'
+        }
 
-    def search(self, query: str, limit: int = 5) -> str:
+    def search(self, query: str, limit: int = 5, offset: int = 0) -> str:
         """
-        Search Semantic Scholar for papers.
-        Returns formatted string with title, authors, year, citations, and URL.
+        Search Semantic Scholar for papers using public API.
+
+        Args:
+            query: Search query
+            limit: Number of results (max 100)
+            offset: Offset for pagination
+
+        Returns:
+            Formatted string with title, authors, year, citations, and URL.
         """
         try:
             url = f"{self.BASE_URL}/paper/search"
             params = {
                 "query": query,
-                "limit": limit,
+                "offset": offset,
+                "limit": min(limit, 100),  # Max 100 per request
                 "fields": "title,authors,year,citationCount,abstract,url,openAccessPdf"
             }
 
-            response = requests.get(url, params=params, timeout=10)
+            response = requests.get(url, params=params, headers=self.headers, timeout=10)
             response.raise_for_status()
             data = response.json()
 
@@ -201,9 +209,8 @@ class GoogleScholarSearch:
             return f"Error searching Google: {str(e)}"
 
 
-# Main search function that tries multiple sources
-@tool
-def search_academic_papers(query: str, sources: List[str] = None) -> str:
+# Main search function (non-decorated for direct calling)
+def search_papers(query: str, sources: List[str] = None) -> str:
     """
     Search for academic papers across multiple sources.
 
@@ -239,3 +246,19 @@ def search_academic_papers(query: str, sources: List[str] = None) -> str:
         all_results.append(f"=== GOOGLE SEARCH RESULTS ===\n{result}")
 
     return "\n\n".join(all_results)
+
+# Tool-decorated version for LangChain agent
+@tool
+def search_academic_papers(query: str, sources: List[str] = None) -> str:
+    """
+    Search for academic papers across multiple sources.
+
+    Args:
+        query: Search query
+        sources: List of sources to search. Options: ['semantic_scholar', 'arxiv', 'google']
+                 If None, searches all available sources.
+
+    Returns:
+        Formatted string with results from all sources.
+    """
+    return search_papers(query, sources)

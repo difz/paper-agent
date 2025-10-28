@@ -17,7 +17,7 @@ from agent.config import Settings
 from agent.user_store_manager import UserStoreManager
 from agent.tools_discord import create_user_tools
 from agent.logging_conf import setup_logging
-from agent.search_tools import search_academic_papers
+from agent.search_tools import search_papers as search_papers_tool  # Import with alias to avoid name collision
 from agent.search_tools_enhanced import search_academic_papers_enhanced
 from agent.conversation_manager import ConversationManager
 from agent.citation_export import CitationManager, Citation
@@ -95,7 +95,9 @@ class ResearchBot(commands.Bot):
             )
 
             # Build index
-            num_chunks = await asyncio.to_thread(
+            loop = asyncio.get_event_loop()
+            num_chunks = await loop.run_in_executor(
+                None,
                 self.store_manager.build_user_index,
                 user_id
             )
@@ -105,7 +107,8 @@ class ResearchBot(commands.Bot):
                 content=f"📚 Generating summary for **{attachment.filename}**..."
             )
 
-            summary = await asyncio.to_thread(
+            summary = await loop.run_in_executor(
+                None,
                 self.summarizer.generate_summary,
                 pdf_path
             )
@@ -168,7 +171,9 @@ def setup_commands(bot: ResearchBot):
             agent_graph = bot._build_agent_for_user(user_id)
 
             # Invoke with messages format
-            result = await asyncio.to_thread(
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
                 agent_graph.invoke,
                 {"messages": [{"role": "user", "content": question}]}
             )
@@ -231,8 +236,14 @@ def setup_commands(bot: ResearchBot):
         try:
             thinking_msg = await ctx.reply("🔍 Searching academic databases...")
 
-            # Search papers
-            results = await asyncio.to_thread(search_academic_papers, query)
+            # Search papers using non-decorated function
+            # Run in executor to avoid blocking
+            loop = asyncio.get_event_loop()
+            results = await loop.run_in_executor(None, search_papers_tool, query)
+
+            # Ensure results is a string
+            if not isinstance(results, str):
+                results = str(results)
 
             # Split if needed
             if len(results) > 1900:
@@ -391,7 +402,9 @@ def setup_commands(bot: ResearchBot):
             if not summary:
                 # Generate new summary
                 thinking_msg = await ctx.reply("📝 Generating summary...")
-                summary = await asyncio.to_thread(
+                loop = asyncio.get_event_loop()
+                summary = await loop.run_in_executor(
+                    None,
                     bot.summarizer.generate_summary,
                     pdf_path
                 )
@@ -498,13 +511,15 @@ def setup_commands(bot: ResearchBot):
             thinking_msg = await ctx.reply("🔍 Searching free academic databases...")
 
             # Search using enhanced search
-            results = await asyncio.to_thread(
+            loop = asyncio.get_event_loop()
+            results = await loop.run_in_executor(
+                None,
                 search_academic_papers_enhanced,
                 query_str,
-                sources=['openalex', 'crossref', 'pubmed', 'arxiv'],
-                year_from=year_from,
-                year_to=year_to,
-                author=author
+                ['openalex', 'crossref', 'pubmed', 'arxiv'],  # sources
+                year_from,
+                year_to,
+                author
             )
 
             # Split if needed
