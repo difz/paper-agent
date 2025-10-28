@@ -5,5 +5,5 @@ def setup_logging(level=logging.INFO):
     logging.basicConfig(
         level=level,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-        handlers=[RichHandler(rich_tracebacks=True, markup=True, stream=sys.stdout)]
+        handlers=[RichHandler(rich_tracebacks=True, markup=True)]
     )
