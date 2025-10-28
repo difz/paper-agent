@@ -5,7 +5,7 @@ Creates structured summaries with key findings, methodology, and conclusions.
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -119,7 +119,6 @@ Provide a clear, concise overview:"""
         """Extract key findings from the document."""
         prompt = ChatPromptTemplate.from_template(
             """You are a research assistant. Read the following research paper text and extract 3-5 key findings or main points.
-
 TEXT:
 {text}
 
