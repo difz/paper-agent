@@ -12,6 +12,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from .config import Settings
+from .pdf_metadata import extract_pdf_metadata
 
 log = logging.getLogger("user_store_manager")
 
@@ -90,12 +91,29 @@ class UserStoreManager:
             log.warning(f"No PDFs found for user {user_id}")
             return 0
 
-        # Load all PDFs
+        # Load all PDFs with metadata extraction
         docs = []
         for pdf_path in pdfs:
             try:
+                log.info(f"Processing {os.path.basename(pdf_path)}...")
+
+                # Extract bibliographic metadata
+                pdf_metadata = extract_pdf_metadata(pdf_path)
+                log.info(f"  Title: {pdf_metadata.get('title', 'Unknown')}")
+                log.info(f"  Authors: {', '.join(pdf_metadata.get('authors', [])) or 'Unknown'}")
+                log.info(f"  Year: {pdf_metadata.get('year', 'Unknown')}")
+
+                # Load PDF pages
                 loader = PyPDFLoader(pdf_path)
-                docs.extend(loader.load())
+                for d in loader.load():
+                    # Add bibliographic metadata to each page's metadata
+                    d.metadata['bib_title'] = pdf_metadata.get('title')
+                    d.metadata['bib_authors'] = pdf_metadata.get('authors', [])
+                    d.metadata['bib_year'] = pdf_metadata.get('year')
+                    d.metadata['bib_journal'] = pdf_metadata.get('journal')
+                    d.metadata['bib_doi'] = pdf_metadata.get('doi')
+                    docs.append(d)
+
                 log.info(f"Loaded PDF: {os.path.basename(pdf_path)}")
             except Exception as e:
                 log.error(f"Error loading {pdf_path}: {e}")

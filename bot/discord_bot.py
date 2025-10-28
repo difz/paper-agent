@@ -53,15 +53,20 @@ class ResearchBot(commands.Bot):
         log.info(f"Connected to {len(self.guilds)} guild(s)")
 
     def _build_agent_for_user(self, user_id: str):
-        """Build a LangChain agent for a specific user."""
+        """Build a LangChain agent for a specific user using LangChain 1.0+ API."""
         llm = ChatGoogleGenerativeAI(model=self.settings.llm_model, temperature=0)
         tools = create_user_tools(user_id)
 
+        # Create agent using new API (returns CompiledStateGraph)
         return create_agent(
-            tools, llm,
-            verbose=False,
-            handle_parsing_errors=True,
-            max_iterations=5
+            model=llm,
+            tools=tools,
+            system_prompt="""You are a helpful research assistant. You MUST follow these rules:
+1.  Your primary function is to answer questions using ONLY the user's uploaded PDF documents.
+2.  You MUST use the `retrieve_passages` or `summarize_with_citations` tools to find all information.
+3.  You may use the `search_academic_papers` tool if the user asks for external academic papers.
+4.  **CRITICAL**: You MUST provide a specific citation for ALL information in your response.
+5.  **DO NOT** use your general knowledge. If the answer is not in the user's documents, you MUST state that you cannot find the information in the provided documents."""
         )
 
     async def process_pdf_upload(self, message: discord.Message, attachment: discord.Attachment):
@@ -160,8 +165,44 @@ def setup_commands(bot: ResearchBot):
             thinking_msg = await ctx.reply("🤔 Thinking...")
 
             # Build agent and run
-            agent = bot._build_agent_for_user(user_id)
-            response = await asyncio.to_thread(agent.run, question)
+            agent_graph = bot._build_agent_for_user(user_id)
+
+            # Invoke with messages format
+            result = await asyncio.to_thread(
+                agent_graph.invoke,
+                {"messages": [{"role": "user", "content": question}]}
+            )
+
+            # Extract the final AI message
+            messages = result.get("messages", [])
+            response = ""
+            if messages:
+                # Get the last AI message
+                for msg in reversed(messages):
+                    if hasattr(msg, 'content') and hasattr(msg, 'type') and msg.type == 'ai':
+                        content = msg.content
+                        # Handle structured content (list of content blocks)
+                        if isinstance(content, list):
+                            text_parts = []
+                            for block in content:
+                                if isinstance(block, dict) and 'text' in block:
+                                    text_parts.append(block['text'])
+                                elif isinstance(block, str):
+                                    text_parts.append(block)
+                            response = '\n'.join(text_parts)
+                        elif isinstance(content, str):
+                            response = content
+                        else:
+                            response = str(content)
+                        break
+                if not response and hasattr(messages[-1], 'content'):
+                    content = messages[-1].content
+                    if isinstance(content, str):
+                        response = content
+                    else:
+                        response = str(content)
+            if not response:
+                response = str(result)
 
             # Save conversation
             bot.conversation_manager.add_conversation(user_id, question, response)

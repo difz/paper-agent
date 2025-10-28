@@ -5,6 +5,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from .config import Settings
 from .logging_conf import setup_logging
+from .pdf_metadata import extract_pdf_metadata
 
 log = logging.getLogger("build_index")
 
@@ -17,7 +18,22 @@ def build_index(corpus_dir: str = "./corpus"):
 
     docs = []
     for p in pdfs:
+        log.info(f"Processing {os.path.basename(p)}...")
+
+        # Extract bibliographic metadata
+        pdf_metadata = extract_pdf_metadata(p)
+        log.info(f"  Title: {pdf_metadata.get('title', 'Unknown')}")
+        log.info(f"  Authors: {', '.join(pdf_metadata.get('authors', [])) or 'Unknown'}")
+        log.info(f"  Year: {pdf_metadata.get('year', 'Unknown')}")
+
+        # Load PDF pages
         for d in PyPDFLoader(p).load():     # one Document per page
+            # Add bibliographic metadata to each page's metadata
+            d.metadata['bib_title'] = pdf_metadata.get('title')
+            d.metadata['bib_authors'] = pdf_metadata.get('authors', [])
+            d.metadata['bib_year'] = pdf_metadata.get('year')
+            d.metadata['bib_journal'] = pdf_metadata.get('journal')
+            d.metadata['bib_doi'] = pdf_metadata.get('doi')
             docs.append(d)
 
     splitter = RecursiveCharacterTextSplitter(

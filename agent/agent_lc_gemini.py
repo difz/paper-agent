@@ -1,25 +1,66 @@
-from langchain.agents import Tool, initialize_agent, AgentType
+from langchain.agents import create_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from .tools_gemini import retrieve_passages, summarize_with_citations
 from .search_tools import search_academic_papers
 from .config import Settings
 
 def build_agent():
+    """Build a LangChain agent using the new 1.0+ API."""
     s = Settings()
     llm = ChatGoogleGenerativeAI(model=s.llm_model, temperature=0)
     tools = [
-        Tool(name="retrieve", func=retrieve_passages,
-             description="Fetch relevant quoted passages from indexed PDFs uploaded by users."),
-        Tool(name="summarize", func=summarize_with_citations,
-             description="Summarize retrieved passages with inline citations from user PDFs."),
-        Tool(name="search_papers", func=search_academic_papers,
-             description="Search for academic papers and journals from Semantic Scholar, arXiv, and Google. Use this to find related research papers when the user asks for external sources or when local PDFs don't have enough information."),
+        retrieve_passages,
+        summarize_with_citations,
+        search_academic_papers
     ]
-    return initialize_agent(
-        tools, llm,
-        agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=False, handle_parsing_errors=True
+
+    # Create agent using new API (returns CompiledStateGraph)
+    return create_agent(
+        model=llm,
+        tools=tools,
+        system_prompt="""You are a helpful research assistant. You can:
+1. Answer general questions using your knowledge
+2. Search and retrieve information from uploaded PDF documents (use retrieve_passages or summarize_with_citations tools)
+3. Search for academic papers when needed (use search_academic_papers tool)
+
+Use tools when the user asks about specific documents or needs to find academic papers. For general questions, feel free to answer directly using your knowledge."""
     )
 
 def ask_agent(message: str) -> str:
-    return build_agent().run(message)
+    """Ask the agent a question and return the response."""
+    agent_graph = build_agent()
+
+    # Invoke with messages format
+    result = agent_graph.invoke(
+        {"messages": [{"role": "user", "content": message}]}
+    )
+
+    # Extract the final AI message
+    messages = result.get("messages", [])
+    if messages:
+        # Get the last AI message
+        for msg in reversed(messages):
+            if hasattr(msg, 'content') and hasattr(msg, 'type') and msg.type == 'ai':
+                content = msg.content
+                # Handle structured content (list of content blocks)
+                if isinstance(content, list):
+                    text_parts = []
+                    for block in content:
+                        if isinstance(block, dict) and 'text' in block:
+                            text_parts.append(block['text'])
+                        elif isinstance(block, str):
+                            text_parts.append(block)
+                    return '\n'.join(text_parts)
+                elif isinstance(content, str):
+                    return content
+                else:
+                    return str(content)
+        # Fallback: return last message content
+        if hasattr(messages[-1], 'content'):
+            content = messages[-1].content
+            if isinstance(content, str):
+                return content
+            return str(content)
+        return str(messages[-1])
+
+    return str(result)
