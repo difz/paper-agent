@@ -8,13 +8,14 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 from langchain_core.prompts import ChatPromptTemplate
 from .config import Settings
 from .user_store_manager import UserStoreManager
+from langchain.tools import tool
 
 log = logging.getLogger("tools_discord")
 
 # Global store manager instance
 store_manager = UserStoreManager()
 
-
+@tool
 def retrieve_passages_for_user(user_id: str, query: str) -> str:
     """
     Retrieve passages from a specific user's PDFs.
@@ -52,7 +53,7 @@ def retrieve_passages_for_user(user_id: str, query: str) -> str:
         log.error(f"Error retrieving passages for user {user_id}: {e}")
         return f"Error retrieving passages: {str(e)}"
 
-
+@tool
 def summarize_with_citations_for_user(user_id: str, query: str) -> str:
     """
     Summarize information from a user's PDFs with citations.
@@ -97,7 +98,6 @@ CONTEXT:
         log.error(f"Error summarizing for user {user_id}: {e}")
         return f"Error generating summary: {str(e)}"
 
-
 def create_user_tools(user_id: str):
     """
     Create tools bound to a specific user's context.
@@ -108,23 +108,11 @@ def create_user_tools(user_id: str):
     Returns:
         List of LangChain tools for the user
     """
-    from langchain.agents import Tool
+    from langchain.tools import tool
     from .search_tools import search_academic_papers
 
     return [
-        Tool(
-            name="retrieve",
-            func=lambda q: retrieve_passages_for_user(user_id, q),
-            description="Fetch relevant quoted passages from your uploaded PDFs."
-        ),
-        Tool(
-            name="summarize",
-            func=lambda q: summarize_with_citations_for_user(user_id, q),
-            description="Summarize retrieved passages with inline citations from your PDFs."
-        ),
-        Tool(
-            name="search_papers",
-            func=search_academic_papers,
-            description="Search for academic papers and journals from Semantic Scholar, arXiv, and Google. Use this to find related research papers when local PDFs don't have enough information."
-        ),
+        lambda q: retrieve_passages_for_user(user_id, q),
+        lambda q: summarize_with_citations_for_user(user_id, q),
+        search_academic_papers
     ]

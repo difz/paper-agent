@@ -1,8 +1,10 @@
 import os
+from langchain.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from .config import Settings
+
 
 def _retriever():
     s = Settings()
@@ -10,6 +12,7 @@ def _retriever():
     vs = Chroma(persist_directory=s.chroma_dir, embedding_function=emb)
     return vs.as_retriever(search_kwargs={"k": s.top_k})
 
+@tool
 def retrieve_passages(q: str) -> str:
     docs = _retriever().invoke(q)
     lines = []
@@ -21,6 +24,7 @@ def retrieve_passages(q: str) -> str:
         lines.append(f"- {txt}\n  _{src}, p.{page}_")
     return "\n".join(lines) if lines else "No passages found."
 
+@tool
 def summarize_with_citations(q: str) -> str:
     s = Settings()
     retriever = _retriever()

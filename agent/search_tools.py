@@ -7,6 +7,7 @@ import logging
 import requests
 from typing import List, Dict, Optional
 from urllib.parse import quote
+from langchain.tools import tool
 
 log = logging.getLogger("search_tools")
 
@@ -16,11 +17,11 @@ class SemanticScholarSearch:
 
     BASE_URL = "https://api.semanticscholar.org/graph/v1"
 
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("SEMANTIC_SCHOLAR_API_KEY")
-        self.headers = {}
-        if self.api_key:
-            self.headers["x-api-key"] = self.api_key
+    # def __init__(self, api_key: Optional[str] = None):
+    #     self.api_key = api_key or os.getenv("SEMANTIC_SCHOLAR_API_KEY")
+    #     self.headers = {}
+    #     if self.api_key:
+    #         self.headers["x-api-key"] = self.api_key
 
     def search(self, query: str, limit: int = 5) -> str:
         """
@@ -35,7 +36,7 @@ class SemanticScholarSearch:
                 "fields": "title,authors,year,citationCount,abstract,url,openAccessPdf"
             }
 
-            response = requests.get(url, params=params, headers=self.headers, timeout=10)
+            response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
 
@@ -201,6 +202,7 @@ class GoogleScholarSearch:
 
 
 # Main search function that tries multiple sources
+@tool
 def search_academic_papers(query: str, sources: List[str] = None) -> str:
     """
     Search for academic papers across multiple sources.
