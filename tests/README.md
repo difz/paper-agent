@@ -137,7 +137,6 @@ All tests should pass if:
 Some tests may be skipped if:
 - No PDFs available for testing
 - External APIs are rate limited (Semantic Scholar)
-- Missing API credentials (Google Scholar)
 
 ### Test Output Example
 
@@ -176,7 +175,7 @@ pip install -r requirements.txt
 ### Integration Tests Fail
 - Check internet connection
 - Semantic Scholar may rate limit (429 errors) - this is expected
-- Some APIs require environment variables (GOOGLE_API_KEY, etc.)
+- GOOGLE_API_KEY environment variable required for Gemini API
 
 ### PDF Tests Skipped
 Upload PDF files to `store/users/{user_id}/pdfs/` or `corpus/` directory

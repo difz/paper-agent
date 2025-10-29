@@ -550,7 +550,7 @@ Simply attach PDF files to any message. Auto-indexed with summary!
 Ask questions about your PDFs or search for papers.
 
 `!search <query>`
-Search Semantic Scholar, arXiv, Google Scholar.
+Search Semantic Scholar and arXiv.
 
 `!fsearch <query> [--year-from YYYY] [--year-to YYYY] [--author "Name"]`
 Enhanced FREE search (OpenAlex, CrossRef, PubMed, arXiv) with filters.

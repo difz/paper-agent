@@ -7,7 +7,6 @@ import logging
 from agent.search_tools import (
     SemanticScholarSearch,
     ArXivSearch,
-    GoogleScholarSearch,
     search_papers
 )
 
