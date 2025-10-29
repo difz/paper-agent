@@ -91,7 +91,6 @@ python -m pytest tests/test_user_store.py -v
 - **GOOGLE_API_KEY**: Required for Gemini LLM and embeddings
 - **DISCORD_TOKEN**: Required for Discord bot
 - **SEMANTIC_SCHOLAR_API_KEY**: Optional, for higher rate limits
-- **GOOGLE_CSE_ID**: Optional, for Google Scholar search
 
 ## 📦 Architecture
 
@@ -103,7 +102,7 @@ LangChain Agent (Gemini)
 Chooses Tool:
 ├── retrieve (from user's PDFs)
 ├── summarize (from user's PDFs)
-└── search_papers (Semantic Scholar + arXiv + Google)
+└── search_papers (Semantic Scholar + arXiv)
     ↓
 Response with Citations
 ```

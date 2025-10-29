@@ -1,6 +1,6 @@
 """
 Search tools for finding academic papers and journals from multiple sources.
-Supports Semantic Scholar, arXiv, and Google Custom Search.
+Supports Semantic Scholar and arXiv.
 """
 import os
 import logging
@@ -158,57 +158,6 @@ class ArXivSearch:
             return f"Error searching arXiv: {str(e)}"
 
 
-class GoogleScholarSearch:
-    """Search using Google Custom Search API (can include Scholar results)."""
-
-    BASE_URL = "https://www.googleapis.com/customsearch/v1"
-
-    def __init__(self, api_key: Optional[str] = None, cse_id: Optional[str] = None):
-        self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
-        self.cse_id = cse_id or os.getenv("GOOGLE_CSE_ID")
-
-    def search(self, query: str, limit: int = 5) -> str:
-        """
-        Search using Google Custom Search.
-        Requires GOOGLE_API_KEY and GOOGLE_CSE_ID.
-        """
-        if not self.api_key or not self.cse_id:
-            return "Google Search not configured. Set GOOGLE_API_KEY and GOOGLE_CSE_ID."
-
-        try:
-            params = {
-                "key": self.api_key,
-                "cx": self.cse_id,
-                "q": query,
-                "num": min(limit, 10)
-            }
-
-            response = requests.get(self.BASE_URL, params=params, timeout=10)
-            response.raise_for_status()
-            data = response.json()
-
-            if "items" not in data:
-                return f"No results found for query: {query}"
-
-            results = []
-            for item in data["items"]:
-                title = item.get("title", "")
-                link = item.get("link", "")
-                snippet = item.get("snippet", "")
-
-                result = f"**{title}**\n"
-                result += f"{snippet}\n"
-                result += f"URL: {link}\n"
-
-                results.append(result)
-
-            return "\n---\n".join(results)
-
-        except Exception as e:
-            log.error(f"Google Search error: {e}")
-            return f"Error searching Google: {str(e)}"
-
-
 # Main search function (non-decorated for direct calling)
 def search_papers(query: str, sources: List[str] = None) -> str:
     """
@@ -216,14 +165,14 @@ def search_papers(query: str, sources: List[str] = None) -> str:
 
     Args:
         query: Search query
-        sources: List of sources to search. Options: ['semantic_scholar', 'arxiv', 'google']
+        sources: List of sources to search. Options: ['semantic_scholar', 'arxiv']
                  If None, searches all available sources.
 
     Returns:
         Formatted string with results from all sources.
     """
     if sources is None:
-        sources = ['semantic_scholar', 'arxiv', 'google']
+        sources = ['semantic_scholar', 'arxiv']
 
     all_results = []
 
@@ -239,12 +188,6 @@ def search_papers(query: str, sources: List[str] = None) -> str:
         result = arxiv.search(query, limit=3)
         all_results.append(f"=== ARXIV RESULTS ===\n{result}")
 
-    if 'google' in sources:
-        log.info(f"Searching Google for: {query}")
-        google = GoogleScholarSearch()
-        result = google.search(query, limit=3)
-        all_results.append(f"=== GOOGLE SEARCH RESULTS ===\n{result}")
-
     return "\n\n".join(all_results)
 
 # Tool-decorated version for LangChain agent
@@ -255,7 +198,7 @@ def search_academic_papers(query: str, sources: List[str] = None) -> str:
 
     Args:
         query: Search query
-        sources: List of sources to search. Options: ['semantic_scholar', 'arxiv', 'google']
+        sources: List of sources to search. Options: ['semantic_scholar', 'arxiv']
                  If None, searches all available sources.
 
     Returns:
