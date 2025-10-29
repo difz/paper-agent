@@ -66,15 +66,6 @@ python -m demo.cli --cmd index --corpus ./corpus
 python -m demo.cli --cmd ask --q "Your question here"
 ```
 
-## 📖 Documentation
-
-See [CLAUDE.md](CLAUDE.md) for complete documentation including:
-- Architecture details
-- Development commands
-- Testing guide
-- Discord bot setup
-- Implementation details
-
 ## 🧪 Testing
 
 ```bash
@@ -107,10 +98,3 @@ Chooses Tool:
 Response with Citations
 ```
 
-## 🤝 Contributing
-
-This is a research tool. See CLAUDE.md for development guidelines.
-
-## 📄 License
-
-MIT License - See LICENSE file for details
