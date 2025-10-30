@@ -1,31 +1,28 @@
 # Research Assistant Agent
+Dibuat oleh:
+- Muhammad Hifzhon Harundoyo (22/487269/TK/54647)
+- Muhammad Budi Setiawan (22/505064/TK/55254)
 
-A RAG (Retrieval-Augmented Generation) agent that helps researchers find relevant passages, synthesize answers, and ground every claim with real citations from PDFs. Integrates with Discord for easy collaboration and includes multi-source academic search.
+# Description
+Sebuah Bot yang berguna untuk membantu peneliti dalam menemukan, merangkum, dan melakukan sitasi jurnal untuk memudahkan dalam penulisan.  Dengan menggunakan LLM Agent yang dikombinasikan dengan berbagai tools serta terintegrasi dengan discord, bot ini siap untuk membantu peneliti dalam melakukan penelitiannya.
 
-## ✨ Features
+## ✨ Fitur
 
-### Core Features
-- 📚 **PDF Analysis**: Upload PDFs and ask questions about them
-- 🔍 **100% FREE Academic Search**: OpenAlex, CrossRef, PubMed, arXiv (no paid APIs!)
-- 🤖 **Smart Agent**: Autonomously decides whether to search your PDFs or external sources
-- 🧠 **Intelligent General Query (NEW!)**: Automatically searches local PDFs first, then falls back to external sources if needed
-- 📝 **Citations**: Every answer includes precise citations with file names and page numbers
-- 💬 **Discord Integration**: Per-user isolated storage, automatic PDF indexing
-- 🔒 **Privacy**: Each user's PDFs are completely isolated
+### Fitur Inti
+- 📚 Analisis PDF: Unggah file PDF dan ajukan pertanyaan langsung tentang isinya.
+- 🔍 Pencarian Akademik 100% Gratis: Terhubung dengan OpenAlex, CrossRef, PubMed, dan arXiv.
+- 🤖 Agen Cerdas: Melakukan pencarian otomatis dari sumber internal (PDF lokal) maupun eksternal.
+- 🧠 Kueri Umum Cerdas (BARU!): Secara otomatis mencari di PDF lokal terlebih dahulu, lalu ke sumber eksternal jika diperlukan.
+- 📝 Sitasi: Setiap jawaban dilengkapi dengan sitasi yang akurat, mencakup nama file dan nomor halaman.
+- 💬 Integrasi Discord: Penyimpanan terpisah per pengguna dan pengindeksan PDF otomatis.
 
-### NEW High-Priority Features ⭐
-- 📜 **Conversation History**: Track all your questions and answers
-- 📖 **Auto PDF Summaries**: Automatic summary generation on upload (overview, key findings, methodology, conclusions)
-- 🎓 **Citation Export**: Export references in BibTeX, APA, MLA, Chicago, IEEE formats
-- 🔎 **Advanced Search Filters**: Filter by year, author, venue
-- 🆓 **Free Search Engines**: OpenAlex, CrossRef, PubMed, arXiv - all 100% free!
-- 🛡️ **Comprehensive Error Handling**: Helpful error messages with suggestions when commands fail or agent can't understand
-
-### 🆕 Latest Updates
-- ✅ **Fixed Database Errors**: Resolved "readonly database" issues by ensuring proper virtual environment usage
-- ✅ **Fixed Double Replies**: Startup script now prevents multiple bot instances
-- ✅ **Real-time Logs**: New `start_bot.sh` script shows logs in terminal with automatic environment checks
-- ✅ **Enhanced Troubleshooting**: Added comprehensive troubleshooting guide for common issues
+### Fitur Prioritas Baru ⭐
+- 📜 Riwayat Percakapan: Melacak seluruh pertanyaan dan jawaban Anda.
+- 📖 Ringkasan Otomatis PDF: Membuat ringkasan otomatis saat file diunggah (termasuk gambaran umum, temuan utama, metodologi, dan kesimpulan).
+- 🎓 Ekspor Sitasi: Ekspor referensi dalam format BibTeX, APA, MLA, Chicago, atau IEEE.
+- 🔎 Filter Pencarian Lanjutan: Memfilter hasil berdasarkan tahun, penulis, atau tempat publikasi.
+- 🆓 Mesin Pencari Gratis: OpenAlex, CrossRef, PubMed, dan arXiv — semuanya gratis!
+- 🛡️ Penanganan Kesalahan Lengkap: Pesan kesalahan yang informatif dan memberikan saran saat perintah gagal atau agen tidak memahami permintaan.
 
 ## 🚀 Quick Start
 
