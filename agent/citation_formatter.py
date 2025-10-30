@@ -25,20 +25,51 @@ import re
 
 
 class CitationFormatter:
-    """Format citations in various academic styles (IEEE, APA, MLA, Chicago)."""
+    """
+    Kelas utilitas untuk memformat kutipan dan daftar pustaka
+    dalam berbagai gaya akademik (IEEE, APA, MLA, Chicago, BibTeX).
+
+    ---
+    ### Deskripsi Umum
+    Kelas ini menyediakan metode statis yang memungkinkan pengguna
+    untuk memformat metadata bibliografi menjadi teks kutipan lengkap
+    atau kutipan singkat (inline) sesuai gaya penulisan yang dipilih.
+
+    Fungsi utamanya meliputi:
+    1. Pemformatan daftar penulis sesuai gaya sitasi.
+    2. Penyusunan kutipan lengkap berdasarkan metadata artikel.
+    3. Penyusunan kutipan singkat untuk penggunaan dalam teks.
+
+    ---
+    ### Gaya yang Didukung
+    - **IEEE**: Digunakan pada publikasi teknik dan komputer.
+    - **APA**: Umum untuk ilmu sosial dan psikologi.
+    - **MLA**: Populer di bidang sastra dan humaniora.
+    - **Chicago**: Banyak digunakan dalam penelitian sejarah dan umum.
+    - **BibTeX**: Untuk integrasi dalam dokumen LaTeX.
+    """
 
     @staticmethod
     def format_authors(authors: List[str], max_authors: int = 3, style: str = 'apa') -> str:
         """
-        Format author names according to style.
+        Memformat daftar nama penulis sesuai dengan gaya sitasi yang ditentukan.
 
-        Args:
-            authors: List of author names
-            max_authors: Maximum number of authors to display before using 'et al.'
-            style: Citation style ('ieee', 'apa', 'mla', 'chicago')
+        ---
+        ### Parameter
+        - **authors** (`List[str]`): Daftar nama penulis, misalnya `["Budi Setiawan", "Galuh Insani"]`.
+        - **max_authors** (`int`, opsional): Jumlah maksimum penulis yang ditampilkan sebelum disingkat menjadi “et al.”.
+        - **style** (`str`, opsional): Jenis gaya penulisan (`'ieee'`, `'apa'`, `'mla'`, `'chicago'`).
 
-        Returns:
-            Formatted author string
+        ---
+        ### Return
+        - **str**: Nama penulis yang sudah diformat sesuai gaya sitasi.
+
+        ---
+        ### Catatan
+        - IEEE menampilkan inisial depan diikuti nama belakang (mis. *B. Setiawan*).
+        - APA menampilkan nama belakang diikuti inisial (mis. *Setiawan, B.*).
+        - MLA menampilkan format *Nama Belakang, Nama Depan*.
+        - Chicago dapat menampilkan "et al." untuk tiga penulis atau lebih.
         """
         if not authors:
             return "Unknown Author"
@@ -105,15 +136,30 @@ class CitationFormatter:
     @staticmethod
     def format_citation(metadata: Dict, page: Optional[int] = None, style: str = 'ieee') -> str:
         """
-        Format a full citation.
+        Membentuk kutipan lengkap berdasarkan metadata bibliografi.
 
-        Args:
-            metadata: Dictionary with bibliographic metadata
-            page: Optional page number
-            style: Citation style ('ieee', 'apa', 'mla', 'chicago', 'bibtex')
+        ---
+        ### Parameter
+        - **metadata** (`Dict`): Metadata bibliografi (judul, penulis, tahun, jurnal, DOI, dll.).
+        - **page** (`int`, opsional): Nomor halaman spesifik yang ingin dicantumkan.
+        - **style** (`str`, opsional): Jenis format kutipan (`'ieee'`, `'apa'`, `'mla'`, `'chicago'`, `'bibtex'`).
 
-        Returns:
-            Formatted citation string
+        ---
+        ### Return
+        - **str**: Kutipan lengkap yang diformat sesuai gaya akademik yang dipilih.
+
+        ---
+        ### Contoh
+        ```python
+        metadata = {
+            "title": "E-Waste Sorting with AI",
+            "authors": ["Budi Setiawan", "Galuh A. Insani"],
+            "year": "2025",
+            "journal": "AI & Sustainability",
+            "doi": "10.5678/ais.2025.77"
+        }
+        CitationFormatter.format_citation(metadata, style="ieee")
+        ```
         """
         authors = metadata.get('authors', [])
         title = metadata.get('title', metadata.get('filename', 'Unknown Title'))
@@ -220,15 +266,22 @@ class CitationFormatter:
     @staticmethod
     def format_inline_citation(metadata: Dict, page: Optional[int] = None, style: str = 'ieee') -> str:
         """
-        Format an inline citation (short form for in-text use).
+        Membentuk kutipan singkat (inline) yang digunakan di dalam teks.
 
-        Args:
-            metadata: Dictionary with bibliographic metadata
-            page: Optional page number
-            style: Citation style
+        ---
+        ### Parameter
+        - **metadata** (`Dict`): Metadata kutipan (mis. nama penulis dan tahun).
+        - **page** (`int`, opsional): Nomor halaman.
+        - **style** (`str`, opsional): Gaya sitasi (`'ieee'`, `'apa'`, `'mla'`, `'chicago'`).
 
-        Returns:
-            Formatted inline citation
+        ---
+        ### Return
+        - **str**: Kutipan pendek dalam bentuk teks, misalnya `(Setiawan, 2025, p. 10)`.
+
+        ---
+        ### Catatan
+        Kutipan ini biasa digunakan dalam teks utama (in-text citation)
+        untuk merujuk sumber tanpa menampilkan detail lengkap.
         """
         authors = metadata.get('authors', [])
         year = metadata.get('year', 'n.d.')
@@ -286,16 +339,35 @@ class CitationFormatter:
 
 def format_citation(metadata: Dict, page: Optional[int] = None, style: str = 'ieee', inline: bool = True) -> str:
     """
-    Convenience function to format a citation.
+    Fungsi pembungkus untuk memformat kutipan dengan cepat.
 
-    Args:
-        metadata: Bibliographic metadata dictionary
-        page: Optional page number
-        style: Citation style ('ieee', 'apa', 'mla', 'chicago', 'bibtex')
-        inline: If True, return inline (short) citation; if False, return full citation
+    ---
+    ### Deskripsi
+    Fungsi ini menyediakan antarmuka sederhana untuk memanggil
+    `CitationFormatter`. Berguna untuk menghasilkan kutipan
+    penuh (bibliografi) atau kutipan singkat (inline)
+    tanpa harus membuat instance kelas.
 
-    Returns:
-        Formatted citation string
+    ---
+    ### Parameter
+    - **metadata** (`Dict`): Metadata bibliografi.
+    - **page** (`int`, opsional): Nomor halaman.
+    - **style** (`str`, opsional): Jenis gaya kutipan.
+    - **inline** (`bool`, opsional):  
+      Jika `True`, menghasilkan kutipan singkat (mis. `(Setiawan, 2025)`);  
+      Jika `False`, menghasilkan kutipan lengkap.
+
+    ---
+    ### Return
+    - **str**: Teks kutipan yang diformat.
+
+    ---
+    ### Contoh
+    ```python
+    metadata = {"title": "Smart Recycling", "authors": ["Budi Setiawan"], "year": "2025"}
+    print(format_citation(metadata, style="apa", inline=True))
+    # Output: (Setiawan, 2025)
+    ```
     """
     formatter = CitationFormatter()
     if inline:
