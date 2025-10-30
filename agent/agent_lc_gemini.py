@@ -47,22 +47,62 @@ Use tools when the user asks about specific documents or needs to find academic 
     )
 
 def ask_agent(message: str) -> str:
-    """Ask the agent a question and return the response."""
+    """
+    Mengirimkan pertanyaan pengguna ke agen LangChain dan mengembalikan respons akhir model dalam bentuk teks.
+
+    Deskripsi
+    ----------
+    Fungsi ini berperan sebagai antarmuka sederhana antara pengguna dan agen LangChain
+    yang telah dikompilasi (dibangun melalui `build_agent`). Fungsi ini menyusun format pesan
+    yang sesuai dengan standar LangChain, memanggil agen menggunakan metode `invoke()`, lalu
+    mengekstrak respons akhir yang dihasilkan oleh model AI.
+
+    Alur Kerja
+    -----------
+    1. **Membangun agen (agent graph)**:
+       - Memanggil `build_agent()` untuk membuat instance baru dari `CompiledStateGraph`
+         yang berisi integrasi antara LLM (Google Generative AI / Gemini) dan tools yang terdaftar.
+       - Setiap pemanggilan akan membuat agen baru, sehingga fungsi ini bersifat *stateless*
+         (tidak menyimpan riwayat percakapan sebelumnya).
+
+    2. **Menjalankan agen**:
+       - Agen dipanggil menggunakan format pesan standar LangChain:
+         {
+             "messages": [
+                 {"role": "user", "content": <pesan_pengguna>}
+             ]
+         }
+       - Metode `invoke()` akan mengeksekusi proses *reasoning* internal, termasuk pemanggilan
+         tools eksternal jika diperlukan (misalnya untuk pencarian atau ringkasan dokumen).
+
+    3. **Ekstraksi hasil akhir**:
+       - Hasil dari `invoke()` berupa struktur data yang memuat daftar pesan (`messages`).
+       - Fungsi ini menelusuri pesan-pesan tersebut dari akhir ke awal untuk mencari pesan dengan tipe `ai`.
+       - Konten pesan bisa berupa string tunggal, daftar blok teks, atau objek kompleks lainnya;
+         fungsi ini menyesuaikan format keluaran agar dikembalikan sebagai teks yang bersih dan mudah dibaca.
+
+    Nilai Kembali
+    --------------
+    - Mengembalikan string berisi respons akhir dari agen (jawaban LLM atau hasil tool).
+    - Jika tidak ditemukan pesan AI yang valid, fungsi akan mengembalikan representasi teks dari hasil mentah.
+
+    Catatan
+    --------
+    - Fungsi ini cocok untuk penggunaan langsung (misalnya antarmuka chatbot atau prompt CLI).
+    - Untuk aplikasi percakapan berkelanjutan (multi-turn), disarankan menyimpan instance agent
+      agar konteks percakapan tetap terjaga.
+    """
     agent_graph = build_agent()
 
-    # Invoke with messages format
     result = agent_graph.invoke(
         {"messages": [{"role": "user", "content": message}]}
     )
 
-    # Extract the final AI message
     messages = result.get("messages", [])
     if messages:
-        # Get the last AI message
         for msg in reversed(messages):
             if hasattr(msg, 'content') and hasattr(msg, 'type') and msg.type == 'ai':
                 content = msg.content
-                # Handle structured content (list of content blocks)
                 if isinstance(content, list):
                     text_parts = []
                     for block in content:
@@ -75,7 +115,7 @@ def ask_agent(message: str) -> str:
                     return content
                 else:
                     return str(content)
-        # Fallback: return last message content
+                
         if hasattr(messages[-1], 'content'):
             content = messages[-1].content
             if isinstance(content, str):
