@@ -408,25 +408,81 @@ class Citation:
 
 
 class CitationManager:
-    """Manages citation extraction and formatting."""
+    """
+    Kelas `CitationManager` bertanggung jawab untuk mengelola proses ekstraksi dan
+    pemformatan sitasi dari teks mentah menjadi berbagai gaya referensi standar.
+
+    Kelas ini berperan sebagai _pengelola_ dari beberapa objek `Citation`, dengan 
+    fungsi utama meliputi:
+    - Mengekstrak metadata kutipan dari teks (misalnya hasil pencarian atau abstrak).
+    - Mengonversi kumpulan kutipan menjadi daftar pustaka (bibliografi) dengan format tertentu.
+
+    ---
+    ### Atribut
+    - **citations** (`dict`): Struktur penyimpanan untuk objek `Citation` yang telah 
+      diekstraksi atau dibuat secara manual. Kunci dapat berupa ID atau urutan indeks.
+
+    ---
+    ### Contoh Penggunaan
+    ```python
+    manager = CitationManager()
+    text_data = '''
+    **Deep Learning for E-Waste Classification**
+    Authors: Budi Setiawan, Galuh A. Insani
+    Year: 2025
+    '''
+    citations = manager.extract_from_text(text_data)
+    print(manager.format_bibliography(citations, "apa"))
+    ```
+    """
 
     def __init__(self):
+        """Inisialisasi objek `CitationManager` dengan struktur penyimpanan kutipan kosong."""
         self.citations = {}
 
     def extract_from_text(self, text: str) -> List[Citation]:
         """
-        Extract citation information from text (e.g., from search results).
+        Mengekstrak informasi kutipan dari teks mentah.
 
-        Args:
-            text: Text containing citation information
+        Metode ini mencari pola teks yang menyerupai hasil pencarian atau ringkasan artikel
+        menggunakan ekspresi reguler. Setiap kutipan yang berhasil ditemukan akan dikonversi 
+        menjadi objek `Citation`.
 
-        Returns:
-            List of Citation objects
+        ---
+        ### Parameter
+        - **text** (`str`): Teks yang berisi informasi kutipan, biasanya diambil dari hasil
+          pencarian otomatis, scraping, atau hasil OCR dari dokumen PDF.
+
+        ---
+        ### Return
+        - **List[Citation]**: Daftar objek `Citation` yang berhasil diekstraksi.
+
+        ---
+        ### Catatan
+        Pola pencarian default mencari format seperti berikut:
+        ```
+        **Judul Artikel**
+        Authors: Nama1, Nama2
+        Year: 2025
+        ```
+        Implementasi ini sederhana dan dapat dikembangkan lebih lanjut untuk
+        mendukung format teks lain seperti JSON, XML, atau hasil dari API pustaka digital.
+
+        ---
+        ### Contoh
+        ```python
+        text = '''
+        **Machine Learning in Waste Management**
+        Authors: A. Rahman, B. Setiawan
+        Year: 2024
+        '''
+        citations = manager.extract_from_text(text)
+        print(citations[0].title)  # Output: Machine Learning in Waste Management
+        ```
         """
         citations = []
 
-        # Try to extract citations from formatted search results
-        # This is a simple implementation - can be enhanced
+        # Pencarian pola sederhana untuk mengekstrak data kutipan
         pattern = r'\*\*(.*?)\*\*\s*\nAuthors?: (.*?)\nYear: (\d{4})?'
         matches = re.findall(pattern, text, re.MULTILINE)
 
@@ -445,14 +501,41 @@ class CitationManager:
 
     def format_bibliography(self, citations: List[Citation], format_type: str = "apa") -> str:
         """
-        Format multiple citations as a bibliography.
+        Mengonversi beberapa kutipan menjadi daftar pustaka (bibliografi) 
+        dalam format yang diinginkan.
 
-        Args:
-            citations: List of Citation objects
-            format_type: Citation format (apa, mla, chicago, bibtex, ieee)
+        Metode ini menerima daftar objek `Citation` dan menghasilkan kumpulan
+        teks referensi yang diformat sesuai gaya tertentu (APA, MLA, Chicago, IEEE, BibTeX, dsb.).
 
-        Returns:
-            Formatted bibliography string
+        ---
+        ### Parameter
+        - **citations** (`List[Citation]`): Daftar objek `Citation` yang akan diformat.
+        - **format_type** (`str`, default = `"apa"`): Jenis format kutipan yang diinginkan.
+          Pilihan yang didukung meliputi:
+          - `"apa"` → American Psychological Association  
+          - `"mla"` → Modern Language Association  
+          - `"chicago"` → Chicago Manual of Style  
+          - `"ieee"` → IEEE  
+          - `"bibtex"` → BibTeX (untuk penggunaan di LaTeX)
+          - Format lain → default ke teks polos (`plain`)
+
+        ---
+        ### Return
+        - **str**: String yang berisi kumpulan kutipan yang diformat sebagai bibliografi.
+
+        ---
+        ### Catatan
+        - Jika tidak ada kutipan yang diberikan (`citations` kosong), fungsi akan 
+          mengembalikan pesan `"No citations to format."`.
+        - Setiap kutipan akan dipisahkan oleh satu baris kosong untuk keterbacaan.
+
+        ---
+        ### Contoh
+        ```python
+        citations = manager.extract_from_text(text_data)
+        apa_refs = manager.format_bibliography(citations, format_type="apa")
+        print(apa_refs)
+        ```
         """
         if not citations:
             return "No citations to format."
