@@ -1,5 +1,24 @@
 """
-Format bibliographic citations in various academic styles.
+Modul untuk memformat kutipan bibliografis dalam berbagai gaya akademik
+(IEEE, APA, MLA, Chicago, dan BibTeX).
+
+Modul ini menyediakan kelas `CitationFormatter` yang berfungsi untuk mengubah
+metadata referensi (seperti penulis, judul, tahun, jurnal, dan DOI)
+menjadi teks kutipan yang sesuai dengan standar gaya tertentu.  
+Selain itu, juga tersedia fungsi pembungkus `format_citation()` sebagai
+antarmuka yang lebih ringkas untuk menghasilkan kutipan penuh maupun kutipan singkat (inline).
+
+Contoh penggunaan:
+------------------
+metadata = {
+.     "title": "Deep Learning for E-Waste Classification",
+    "authors": ["Budi Setiawan", "Galuh Adi Insani"],
+    "year": "2025",
+    "journal": "Journal of Sustainable AI Research",
+    "doi": "10.1234/jsair.2025.001"
+}
+print(format_citation(metadata, style="apa", inline=False))
+Setiawan, B., & Insani, G. A. (2025). Deep Learning for E-Waste Classification. Journal of Sustainable AI Research. https://doi.org/10.1234/jsair.2025.001
 """
 from typing import Dict, List, Optional
 import re
