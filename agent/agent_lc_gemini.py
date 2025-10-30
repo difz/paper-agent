@@ -6,8 +6,7 @@ from .config import Settings
 
 def build_agent():
     """
-    Build and return a LangChain agent (CompiledStateGraph) using the 1.0+ API.
-
+    Membuat dan mengembalikan LangChain Agent
     Description
     -----------
     - Membaca konfigurasi dari `Settings` (mis. nama model LLM, API keys).
