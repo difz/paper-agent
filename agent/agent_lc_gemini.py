@@ -5,7 +5,29 @@ from .search_tools import search_academic_papers
 from .config import Settings
 
 def build_agent():
-    """Build a LangChain agent using the new 1.0+ API."""
+    """
+    Build and return a LangChain agent (CompiledStateGraph) using the 1.0+ API.
+
+    Description
+    -----------
+    - Membaca konfigurasi dari `Settings` (mis. nama model LLM, API keys).
+    - Menginisialisasi wrapper LLM Google Generative AI (Gemini) dengan parameter deterministik
+      untuk keluaran yang konsisten (`temperature=0`).
+    - Mendaftarkan tools eksternal yang tersedia untuk agent:
+        * `retrieve_passages`         - mengambil kutipan/passage relevan dari dokumen yang diunggah
+        * `summarize_with_citations`  - membuat ringkasan yang menyertakan sitasi / sumber
+        * `search_academic_papers`    - melakukan pencarian makalah akademik (arXiv/Semantic Scholar/DS)
+    - Menggabungkan semuanya ke dalam `create_agent(...)` dan mengembalikan objek agent yang
+      siap dipanggil (CompiledStateGraph).
+
+    Behavior expectations (ringkasan singkat)
+    ----------------------------------------
+    - Untuk pertanyaan umum: jawab langsung mengandalkan pengetahuan bawaan LLM.
+    - Untuk pertanyaan yang memerlukan bukti, kutipan, atau pemeriksaan dokumen: gunakan tools.
+    - Selalu prioritaskan akurasi; apabila data tidak pasti, berikan pernyataan ketidakpastian dan
+      sumber yang digunakan (tool outputs).
+    - Jika perlu klarifikasi dari pengguna, minta pertanyaan lanjutan sebelum memanggil tools besar.
+    """
     s = Settings()
     llm = ChatGoogleGenerativeAI(model=s.llm_model, temperature=0)
     tools = [
@@ -14,7 +36,6 @@ def build_agent():
         search_academic_papers
     ]
 
-    # Create agent using new API (returns CompiledStateGraph)
     return create_agent(
         model=llm,
         tools=tools,
