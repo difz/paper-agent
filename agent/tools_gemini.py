@@ -1,7 +1,7 @@
 import os
 from langchain.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from .config import Settings
 from .citation_formatter import format_citation

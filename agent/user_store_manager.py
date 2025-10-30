@@ -9,7 +9,7 @@ from typing import Optional, List
 from pathlib import Path
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from .config import Settings
 from .pdf_metadata import extract_pdf_metadata
@@ -142,7 +142,7 @@ class UserStoreManager:
             embedding=emb,
             persist_directory=str(chroma_dir)
         )
-        vs.persist()
+        # Note: langchain-chroma auto-persists, no need to call .persist()
 
         log.info(f"Built index for user {user_id}: {len(chunks)} chunks from {len(pdfs)} PDFs")
         return len(chunks)

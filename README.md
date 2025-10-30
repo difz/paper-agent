@@ -8,6 +8,7 @@ A RAG (Retrieval-Augmented Generation) agent that helps researchers find relevan
 - 📚 **PDF Analysis**: Upload PDFs and ask questions about them
 - 🔍 **100% FREE Academic Search**: OpenAlex, CrossRef, PubMed, arXiv (no paid APIs!)
 - 🤖 **Smart Agent**: Autonomously decides whether to search your PDFs or external sources
+- 🧠 **Intelligent General Query (NEW!)**: Automatically searches local PDFs first, then falls back to external sources if needed
 - 📝 **Citations**: Every answer includes precise citations with file names and page numbers
 - 💬 **Discord Integration**: Per-user isolated storage, automatic PDF indexing
 - 🔒 **Privacy**: Each user's PDFs are completely isolated
@@ -18,6 +19,13 @@ A RAG (Retrieval-Augmented Generation) agent that helps researchers find relevan
 - 🎓 **Citation Export**: Export references in BibTeX, APA, MLA, Chicago, IEEE formats
 - 🔎 **Advanced Search Filters**: Filter by year, author, venue
 - 🆓 **Free Search Engines**: OpenAlex, CrossRef, PubMed, arXiv - all 100% free!
+- 🛡️ **Comprehensive Error Handling**: Helpful error messages with suggestions when commands fail or agent can't understand
+
+### 🆕 Latest Updates
+- ✅ **Fixed Database Errors**: Resolved "readonly database" issues by ensuring proper virtual environment usage
+- ✅ **Fixed Double Replies**: Startup script now prevents multiple bot instances
+- ✅ **Real-time Logs**: New `start_bot.sh` script shows logs in terminal with automatic environment checks
+- ✅ **Enhanced Troubleshooting**: Added comprehensive troubleshooting guide for common issues
 
 ## 🚀 Quick Start
 
@@ -40,14 +48,55 @@ cp logs/.env.example .env
 
 ### 3. Run Discord Bot
 
+**IMPORTANT**: Always use the startup script to ensure proper environment:
+
 ```bash
-python run_bot.py
+# Start the bot with real-time logs (recommended)
+./start_bot.sh
+
+# The script will:
+# ✅ Check virtual environment exists
+# ✅ Verify ChromaDB is installed
+# ✅ Prevent multiple bot instances (fixes double replies)
+# ✅ Show logs in real-time
+# ✅ Save logs to bot.log
+
+# Press Ctrl+C to stop the bot
 ```
 
-### 4. Use the Bot
+**Alternative methods** (manual):
+```bash
+# Option 1: Activate virtual environment first
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+python run_bot.py
+
+# Option 2: Use venv Python directly
+.venv/bin/python run_bot.py
+```
+
+**⚠️ Common Issues:**
+- **Database errors**: Running with system Python instead of `.venv/bin/python`
+- **Double replies**: Multiple bot instances running (use startup script to prevent)
+- **No ChromaDB**: Dependencies not installed in virtual environment
+
+### 4. Stop the Bot
+
+```bash
+# If running with ./start_bot.sh:
+# Press Ctrl+C in the terminal
+
+# If running in background, kill the process:
+pkill -f "python.*run_bot.py"
+
+# Check if bot is still running:
+ps aux | grep run_bot
+```
+
+### 5. Use the Bot
 
 In Discord:
 - **Upload PDFs**: Attach PDF files (auto-indexed with summary!)
+- **General query (NEW!)**: `!general What is machine learning?` - Intelligently searches your PDFs first, then external sources automatically
 - **Ask questions**: `!ask What is perceived inclusion?`
 - **Free search with filters**: `!fsearch transformers --year-from 2020 --author "Vaswani"`
 - **View PDF summary**: `!summarize my_paper.pdf`

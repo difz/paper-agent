@@ -153,6 +153,25 @@ class PDFMetadataExtractor:
         authors = []
         lines = text.split('\n')
 
+        # Strategy 0: Look for web article author bylines (before checking academic format)
+        # Common patterns: "By Author Name", "Author Name", standalone names
+        for i in range(3, min(len(lines), 30)):
+            line = lines[i].strip()
+
+            # Pattern: "By Author Name" or just "Author Name" on its own line
+            if re.match(r'^(?:By\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})$', line):
+                # Check if next line doesn't look like an author (avoid collecting title)
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1].strip().lower()
+                    # If next line has many words or looks like content, current line is author
+                    if (len(next_line.split()) > 4 or
+                        any(word in next_line for word in ['large', 'language', 'model', 'agent',
+                                                            'paper', 'article', 'research', 'study'])):
+                        author_name = re.sub(r'^By\s+', '', line)
+                        authors.append(author_name.strip())
+                        if authors:  # Found web article author, return early
+                            return authors
+
         # Skip first 5 lines (usually title) and scan for author section
         start_line = 3
 
@@ -182,13 +201,19 @@ class PDFMetadataExtractor:
                         if not any(word in name for word in title_words):
                             authors.append(name.strip())
 
-                    # Initial + name: "G.RishabBabu"
+                    # Single initial + name: "G.RishabBabu"
                     elif re.match(r'^[A-Z]\.(?:\s*[A-Z][a-z]+){1,3}$', line):
                         name = re.sub(r'\.([A-Z])', r'. \1', line)
                         name = re.sub(r'([a-z])([A-Z])', r'\1 \2', name)
                         authors.append(name.strip())
 
-                    # Title + name: "Mrs.FatimaUnnisa" or "Dr.JohnSmith"
+                    # Multi-letter initial + name: "Md.IrfanAhmed" or "Dr.JohnSmith"
+                    elif re.match(r'^[A-Z][a-z]{1,3}\.(?:\s*[A-Z][a-z]+){1,4}$', line):
+                        name = re.sub(r'\.([A-Z])', r'. \1', line)
+                        name = re.sub(r'([a-z])([A-Z])', r'\1 \2', name)
+                        authors.append(name.strip())
+
+                    # Title + name: "Mrs.FatimaUnnisa" or "Prof.JohnSmith"
                     elif re.match(r'^(?:Mrs?\.?|Dr\.?|Prof\.?)[A-Z]', line):
                         name = re.sub(r'(^(?:Mrs?|Dr|Prof))\.([A-Z])', r'\1. \2', line)
                         name = re.sub(r'([a-z])([A-Z])', r'\1 \2', name)
